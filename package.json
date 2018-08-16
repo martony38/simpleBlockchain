@@ -1,0 +1,19 @@
+{
+  "name": "private-blockchain",
+  "version": "1.0.0",
+  "description": "A Simple Private Blockchain",
+  "main": "simpleChain.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "jest": {
+    "testEnvironment": "node"
+  },
+  "author": "ls",
+  "license": "ISC",
+  "dependencies": {
+    "crypto-js": "^3.1.9-1",
+    "jest": "^23.5.0",
+    "level": "^4.0.0"
+  }
+}
