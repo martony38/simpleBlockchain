@@ -38,8 +38,8 @@ class Blockchain {
   /**
   * Add the genesis block to the chain.
   */
-  init() {
-    const genesisBlock = new Block("First block in the chain - Genesis block")
+  init(newBlock) {
+    const genesisBlock = newBlock || new Block("First block in the chain - Genesis block")
 
     // UTC timestamp
     genesisBlock.time = new Date().getTime().toString().slice(0, -3);
@@ -62,6 +62,9 @@ class Blockchain {
 
     return this.getBlockHeight()
       .then(height => {
+        if (height < 0) {
+          return this.init(newBlock);
+        }
         newBlock.height = height + 1;
         return this.getBlock(height)
       }).then(previousBlock => {
