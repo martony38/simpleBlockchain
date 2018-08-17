@@ -35,6 +35,13 @@ class Block {
 * @description Represents a blockchain
 */
 class Blockchain {
+  constructor() {
+    this.getBlockHeight()
+      .then(height => {
+        if (height === -1) this.init();
+      });
+  }
+
   /**
   * Add the genesis block to the chain.
   */
@@ -62,9 +69,6 @@ class Blockchain {
 
     return this.getBlockHeight()
       .then(height => {
-        if (height < 0) {
-          return this.init(newBlock);
-        }
         newBlock.height = height + 1;
         return this.getBlock(height)
       }).then(previousBlock => {
@@ -110,14 +114,7 @@ class Blockchain {
   getBlock(blockHeight) {
     return db.get(blockHeight)
       .then(result => {
-        const block = JSON.parse(result)
-        return new Block(
-          block.body,
-          block.hash,
-          block.height,
-          block.time,
-          block.previousBlockHash
-        );
+        return JSON.parse(result);
       }).catch((err) => {
         console.log(`Error while getting block # ${blockHeight}: `, err);
       });

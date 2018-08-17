@@ -81,7 +81,7 @@ const badBlock5 = {
    '989fe869ab307e8b4873a740baf93c9aa8d44c34cedbfdfb5dfce10440e6ee69'
 }
 
-test ('AddBlock create genesis block if not created yet', () => {
+test.skip('AddBlock create genesis block if not created yet', () => {
   const testBlock = new simpleChain.block('test - addBlock create genesis block');
 
   return testChain.addBlock(testBlock)
@@ -183,7 +183,7 @@ describe ('Tests requiring some initial setup', () => {
 
   describe('Modify getBlock() function', () => {
     describe('getBlock() function retrieves a block by block height within the LevelDB chain.', () => {
-      test('getBlock returns a block', () => {
+      test.skip('getBlock returns a block', () => {
         return testChain.getBlock(2)
           .then(block => {
             expect(block).toBeInstanceOf(simpleChain.block);
