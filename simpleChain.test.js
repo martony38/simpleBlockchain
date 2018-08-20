@@ -1,4 +1,5 @@
 const simpleChain = require('./simpleChain');
+const db = require('./database');
 
 const testChain = new simpleChain.blockchain();
 
@@ -81,12 +82,16 @@ const badBlock5 = {
    '989fe869ab307e8b4873a740baf93c9aa8d44c34cedbfdfb5dfce10440e6ee69'
 }
 
+afterAll(() => {
+  return db.close();
+})
+
 test.skip('AddBlock create genesis block if not created yet', () => {
   const testBlock = new simpleChain.block('test - addBlock create genesis block');
 
   return testChain.addBlock(testBlock)
     .then(() => {
-      return simpleChain.db.get(0);
+      return db.get(0);
     })
     .then(block => {
       expect(block).toBe(JSON.stringify(testBlock));
@@ -97,7 +102,7 @@ describe ('Tests requiring some initial setup', () => {
 
   beforeAll(() => {
     // Initialize test blockchain
-    return simpleChain.db.batch()
+    return db.batch()
       .put(0, JSON.stringify(goodBlock0))
       .put(1, JSON.stringify(goodBlock1))
       .put(2, JSON.stringify(goodBlock2))
@@ -109,7 +114,7 @@ describe ('Tests requiring some initial setup', () => {
 
   afterAll(() => {
     // Delete test blockchain
-    return simpleChain.db.batch()
+    return db.batch()
       .del(0)
       .del(1)
       .del(2)
@@ -121,15 +126,15 @@ describe ('Tests requiring some initial setup', () => {
 
   describe ('Configure LevelDB to persist dataset', () => {
     test('SimpleChain.js includes the Node.js level library and configured to persist data within the project directory.', () => {
-      expect(simpleChain.db).toBeDefined();
+      expect(db).toBeDefined();
 
-      return simpleChain.db.put(100, 5)
+      return db.put(100, 5)
         .then(() => {
-          return simpleChain.db.get(100);
+          return db.get(100);
         })
         .then(result => {
           expect(JSON.parse(result)).toBe(5);
-          return simpleChain.db.del(100);
+          return db.del(100);
         });
     });
   });
@@ -138,18 +143,18 @@ describe ('Tests requiring some initial setup', () => {
     describe ('Genesis block persist as the first block in the blockchain using LevelDB', () => {
 
       beforeAll(() => {
-        return simpleChain.db.del(0);
+        return db.del(0);
       })
 
       afterAll(() => {
         // Restore test blockchain
-        return simpleChain.db.put(0, JSON.stringify(goodBlock0));
+        return db.put(0, JSON.stringify(goodBlock0));
       })
 
       test('init add genesis block to LevelDB', () => {
         return testChain.init()
           .then(() => {
-            return simpleChain.db.get(0)
+            return db.get(0)
           })
           .then(block => {
             expect(JSON.parse(block).body).toBe('First block in the chain - Genesis block');
@@ -161,7 +166,7 @@ describe ('Tests requiring some initial setup', () => {
 
       afterAll(() => {
         // Restore test blockchain
-        return simpleChain.db.del(6);
+        return db.del(6);
       })
 
       test('addBlock save new block in LevelDB',() => {
@@ -172,7 +177,7 @@ describe ('Tests requiring some initial setup', () => {
             expect(block).toBeInstanceOf(simpleChain.block);
             expect(block.height).toBe(6);
             expect(block.body).toBe('test - addBlock save new block in LevelDB');
-            return simpleChain.db.get(block.height);
+            return db.get(block.height);
           })
           .then(block => {
             expect(block).toBe(JSON.stringify(testBlock));
@@ -218,7 +223,7 @@ describe ('Tests requiring some initial setup', () => {
       });
 
       test('validateBlock() do not validate a bad block', () => {
-        return simpleChain.db.put(6, JSON.stringify(badBlock5))
+        return db.put(6, JSON.stringify(badBlock5))
           .then(() => {
             return testChain.validateBlock(6)
           })
@@ -226,7 +231,7 @@ describe ('Tests requiring some initial setup', () => {
             expect(result).toBe(false);
 
             // Restore test blockchain
-            return simpleChain.db.del(6);
+            return db.del(6);
           });
       });
     })
@@ -243,7 +248,7 @@ describe ('Tests requiring some initial setup', () => {
 
       describe('blockchain is not valid', () => {
         test('validateChain() returns false if last block on blockchain is not valid', () => {
-          return simpleChain.db.put(5, JSON.stringify(badBlock5))
+          return db.put(5, JSON.stringify(badBlock5))
             .then(() => {
               return testChain.validateChain()
             })
@@ -251,12 +256,12 @@ describe ('Tests requiring some initial setup', () => {
               expect(result).toBe(false);
 
               // Restore test blockchain
-              return simpleChain.db.put(5, JSON.stringify(goodBlock5))
+              return db.put(5, JSON.stringify(goodBlock5))
             });
         });
 
         test('validateChain() returns false if block in middle of blockchain is not valid', () => {
-          return simpleChain.db.put(3, JSON.stringify(badBlock3))
+          return db.put(3, JSON.stringify(badBlock3))
             .then(() => {
               return testChain.validateChain()
             })
@@ -264,7 +269,7 @@ describe ('Tests requiring some initial setup', () => {
               expect(result).toBe(false);
 
               // Restore test blockchain
-              return simpleChain.db.put(3, JSON.stringify(goodBlock3))
+              return db.put(3, JSON.stringify(goodBlock3))
             });
         });
       });

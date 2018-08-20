@@ -4,7 +4,8 @@
   "description": "A Simple Private Blockchain",
   "main": "simpleChain.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "start": "node index.js"
   },
   "jest": {
     "testEnvironment": "node"
@@ -13,7 +14,10 @@
   "license": "ISC",
   "dependencies": {
     "crypto-js": "^3.1.9-1",
+    "express": "^4.16.3",
     "jest": "^23.5.0",
-    "level": "^4.0.0"
+    "level": "^4.0.0",
+    "superagent": "^3.8.3",
+    "supertest": "^3.1.0"
   }
 }

@@ -3,12 +3,7 @@
 */
 const SHA256 = require('crypto-js/sha256');
 
-/**
-* Persist data with LevelDB: https://github.com/Level/level
-*/
-const level = require('level');
-const chainDB = './chaindata';
-const db = level(chainDB);
+const db = require('./database');
 
 /**
 * @description Represents a block
@@ -208,6 +203,5 @@ class Blockchain {
 
 module.exports = {
   blockchain: Blockchain,
-  block: Block,
-  db
+  block: Block
 };
