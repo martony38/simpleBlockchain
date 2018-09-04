@@ -5,6 +5,7 @@
 
 # database
 /chaindata
+/mempool
 
 # production
 /build

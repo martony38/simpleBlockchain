@@ -102,7 +102,7 @@ class Blockchain {
   }
 
   /**
-  * Get a block.
+  * Get a block by height.
   * @param {number} blockHeight - The block number.
   * @return {Object} The block object.
   */
@@ -113,6 +113,58 @@ class Blockchain {
       }).catch((err) => {
         console.log(`Error while getting block # ${blockHeight}: `, err);
       });
+  }
+
+  /**
+  * Get a block by hash.
+  * @param {string} hash - The block hash.
+  * @return {Object} The block object.
+  */
+  getBlockByHash(hash) {
+    return new Promise((resolve, reject) => {
+      db.createValueStream()
+        .on('data', function (data) {
+          const block = JSON.parse(data);
+          if (block.hash === hash) {
+            resolve(block);
+          }
+        })
+        .on('error', function (err) {
+          reject(err)
+        })
+        .on('close', function () {
+          resolve(null);
+        })
+    }).catch(err => {
+      console.log(`Error ${err} while getting the block with hash ${hash}`)
+    });;
+  }
+
+  /**
+  * Get blocks by address.
+  * @param {string} address - The wallet address.
+  * @return {Array} The list of block objects.
+  */
+  getBlockByAddress(address) {
+    return new Promise((resolve, reject) => {
+      let blocks = [];
+
+      db.createValueStream()
+        .on('data', function (data) {
+          const block = JSON.parse(data);
+          if (block.body.address === address) {
+            blocks.push(block)
+          }
+        })
+        .on('error', function (err) {
+          reject(err)
+        })
+        .on('close', function () {
+          resolve(blocks);
+        })
+    }).catch(err => {
+      console.log(`Error ${err} while getting the block with hash ${hash}`)
+    });;
   }
 
   /**
