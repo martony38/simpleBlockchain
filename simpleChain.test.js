@@ -143,18 +143,33 @@ describe ('Tests requiring some initial setup', () => {
     describe ('Genesis block persist as the first block in the blockchain using LevelDB', () => {
 
       beforeAll(() => {
-        return db.del(0);
+        // Delete test blockchain
+        return db.batch()
+          .del(0)
+          .del(1)
+          .del(2)
+          .del(3)
+          .del(4)
+          .del(5)
+          .write()
       })
 
       afterAll(() => {
         // Restore test blockchain
-        return db.put(0, JSON.stringify(goodBlock0));
+        return db.batch()
+          .put(0, JSON.stringify(goodBlock0))
+          .put(1, JSON.stringify(goodBlock1))
+          .put(2, JSON.stringify(goodBlock2))
+          .put(3, JSON.stringify(goodBlock3))
+          .put(4, JSON.stringify(goodBlock4))
+          .put(5, JSON.stringify(goodBlock5))
+          .write()
       })
 
       test('init add genesis block to LevelDB', () => {
         return testChain.init()
           .then(() => {
-            return db.get(0)
+            return db.get(0);
           })
           .then(block => {
             expect(JSON.parse(block).body).toBe('First block in the chain - Genesis block');
