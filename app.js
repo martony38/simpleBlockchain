@@ -24,7 +24,7 @@ const checkContentType = function (req, res, next) {
 const hasAddressField = function(req, res, next) {
   // Check the request body contains an 'address' field/property
   if (!req.body.address) {
-    res.status(400).send({ Error: 'Payload should be an object with an address property. (Ex: { "address" : "this will work" })' });
+    res.status(400).send({ Error: 'Payload should be an object with an address property.' });
   } else {
     next();
   }
@@ -156,7 +156,7 @@ app.post('/requestValidation', (req, res) => {
 app.post('/message-signature/validate', (req, res, next) => {
   // Check the request body contains 'signature' fields
   if (!req.body.signature) {
-    res.status(400).send({ Error: 'Payload should be an object with a signature property. (Ex: { "address" : "this will work", "signature" : "valid signature" })' });
+    res.status(400).send({ Error: 'Payload should be an object with a signature property.' });
   } else {
     next();
   }
