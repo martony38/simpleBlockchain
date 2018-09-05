@@ -39,7 +39,12 @@ const addressIsValid = function(req, res, next) {
   }
 };
 
-app.post(['/block', '/requestValidation', '/message-signature/validate'], [checkContentType, hasAddressField, addressIsValid])
+app.post(
+  ['/block', '/requestValidation', '/message-signature/validate'],
+  checkContentType,
+  hasAddressField,
+  addressIsValid
+);
 
 app.get('/block/:height', (req, res, next) => {
   // Check the url param height is a number
@@ -95,13 +100,16 @@ app.post('/block', (req, res, next) => {
     next();
   }
 }, (req, res, next) => {
+  // Check the star object in the request body only contain the allowed fields/properties
   const starProperties = new Set(['ra', 'dec', 'story', 'mag', 'const']);
   let badProperty = false
+
   Object.keys(req.body.star).forEach(key => {
     if (!starProperties.has(key)) {
       badProperty = true
     }
   })
+
   if (badProperty) {
     res.status(400).send({ Error: 'Star object in payload can only contains the following properties: ra, dec, story, mag, const.' });
   } else {
@@ -112,6 +120,7 @@ app.post('/block', (req, res, next) => {
   if (!req.body.star.story) {
     req.body.star.story = ''
   }
+
   // Check if story is encoded in ascii
   if (!/^[\x00-\x7F]*$/.test(req.body.star.story)) {
     res.status(400).send({ Error: 'star.story should only include ascii characters.' });
