@@ -2,7 +2,7 @@
 * Persist data with LevelDB: https://github.com/Level/level
 */
 const level = require('level');
-const mempool = level('./mempool');
+const db = level('./mempool');
 
 /**
 * Use bitcoinjs-message to verify messages: https://github.com/bitcoinjs/bitcoinjs-message
@@ -17,7 +17,7 @@ class StarRegistrationRequest {
   * @constructor
   * @param {string} address - The wallet address associated with the request.
   * @param {number} requestTimeStamp - The UTC timestamp in milliseconds.
-  * @param {number} validationWindow - The number of seconds before the request validation expires.
+  * @param {number} validationWindow - The number of seconds before the star registration request expires.
   */
   constructor(address, requestTimeStamp, validationWindow=300) {
     this.address = address;
@@ -29,27 +29,50 @@ class StarRegistrationRequest {
 }
 
 /**
-* @description Represents the Mempool
+* @description Represents the Mempool that holds the pending star registration requests
 */
 class Mempool {
-  constructor() {
-    this._clean();
+  /**
+  * Initialize mempool.
+  */
+  init() {
+    return this._clean();
   }
 
+  /**
+  * Remove expired star registration requests from mempool database.
+  * @return {Object} A promise that resolves when all the expired requests have been deleted.
+  */
   _clean() {
-    mempool.createReadStream()
-      .on('data', data => {
-        const request = JSON.parse(data.value)
-        this._updateValidationWindow(request)
-        if (request.validationWindow < 0) {
-          mempool.del(data.key)
-        }
-      })
-      .on('error', function (err) {
-        console.log('Error while cleaning mempool: ', err)
-      });
+    return new Promise((resolve, reject) => {
+      let oldRequests = [];
+
+      db.createReadStream()
+        .on('data', data => {
+          const request = JSON.parse(data.value)
+          this._updateValidationWindow(request)
+          if (request.validationWindow < 0) {
+            oldRequests.push(data.key)
+          }
+        })
+        .on('error', function (err) {
+          reject(err)
+        })
+        .on('close', function () {
+          resolve(oldRequests);
+        })
+    }).catch(err => {
+      console.log('Error while cleaning mempool: ', err)
+    }).then(oldRequests => {
+      return db.batch(oldRequests.map(key => ({ type: 'del', key })))
+    })
   }
 
+  /**
+  * Add/update a star registration request to mempool database.
+  * @param {string} address - The wallet address.
+  * @return {Object} The star registration request.
+  */
   addStarRegistrationRequest(address) {
     return this.getStarRegistrationRequest(address)
       .then(request => {
@@ -62,6 +85,12 @@ class Mempool {
       })
   }
 
+  /**
+  * Validate a star registration request.
+  * @param {string} address - The wallet address associated to the request.
+  * @param {string} signature - The message signature corresponding to the request.
+  * @return {Object} The validated (or invalidated) star registration request.
+  */
   validateSignature(address, signature) {
     return this.getStarRegistrationRequest(address)
       .then(request => {
@@ -74,7 +103,7 @@ class Mempool {
             request.messageSignature = 'invalid';
           }
           finally {
-            return mempool.put(address, JSON.stringify(request))
+            return db.put(address, JSON.stringify(request))
               .then(() => {
                 this._updateValidationWindow(request)
                 return request;
@@ -85,25 +114,39 @@ class Mempool {
       })
   }
 
+  /**
+  * Update validation window of a star registration request.
+  * @param {Object} request - The star registration request to update.
+  */
   _updateValidationWindow(request) {
     const newValidationWindow = request.requestTimeStamp / 1000 + request.validationWindow - new Date().getTime() / 1000;
     request.validationWindow = newValidationWindow;
   }
 
+  /**
+  * Add a new star registration request to mempool database.
+  * @param {string} address - The wallet address.
+  * @return {Object} The star registration request.
+  */
   _addNewStarRegistrationRequest(address) {
     const request = new StarRegistrationRequest(address, new Date().getTime())
 
-    return mempool.put(request.address, JSON.stringify(request))
+    return db.put(request.address, JSON.stringify(request))
       .then(() => {
         setTimeout(function() {
-          mempool.del(request.address);
+          db.del(request.address);
         }, request.validationWindow * 1000);
         return request
       });
   }
 
+  /**
+  * Get a star registration request from mempool database.
+  * @param {string} address - The wallet address.
+  * @return {Object} The star registration request.
+  */
   getStarRegistrationRequest(address) {
-    return mempool.get(address)
+    return db.get(address)
       .then(result => {
         return JSON.parse(result);
       })

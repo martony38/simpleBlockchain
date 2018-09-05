@@ -30,17 +30,27 @@ class Block {
 * @description Represents a blockchain
 */
 class Blockchain {
-  constructor() {
-    this.getBlockHeight()
+  /**
+  * Initialize blockchain.
+  * @return {Object} The most recent block on the chain.
+  */
+  init() {
+    return this.getBlockHeight()
       .then(height => {
-        if (height === -1) this.init();
+        if (height === -1) {
+          return this._createGenesisBlock();
+        } else {
+          return this.getBlock(height)
+        }
       });
   }
 
   /**
   * Add the genesis block to the chain.
+  * @param {Object} newBlock - The block to use as a genesis block.
+  * @return {Object} The newly created genesis block.
   */
-  init(newBlock) {
+  _createGenesisBlock(newBlock) {
     const genesisBlock = newBlock || new Block("First block in the chain - Genesis block")
 
     // UTC timestamp
@@ -57,6 +67,8 @@ class Blockchain {
 
   /**
   * Add a new block to the chain.
+  * @param {Object} newBlock - The block to add to the chain.
+  * @return {Object} The newly added block.
   */
   addBlock(newBlock) {
     // UTC timestamp
