@@ -417,7 +417,7 @@ describe('Blockchain ID validation routine', () => {
       let signature
 
       beforeAll(() => {
-        // make a start registration request
+        // make a star registration request
         return request(app).post("/requestValidation").send({ address })
           .then(response => {
             signature =  bitcoinMessage.sign(response.body.message, privateKey, keyPair.compressed)
