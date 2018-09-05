@@ -123,7 +123,7 @@ The RESTFul web API provides methods for fetching blocks with information about 
 
   * **Code:** `400 Bad Request`
     ```json
-    { "Error" : "Url should end with block number. (Ex: GET http://server:port/block/4)" }
+    { "Error" : "Hash is not a SHA256 hash" }
     ```
 
   * **Code:** `404 Not Found`
@@ -190,6 +190,11 @@ The RESTFul web API provides methods for fetching blocks with information about 
     ```
 
 * **Error Response**
+
+  * **Code:** `400 Bad Request`
+    ```json
+    { "Error" : "The address does not appear to be a valid wallet address." }
+    ```
 
   * **Code:** `404 Not Found`
     ```json

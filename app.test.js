@@ -129,11 +129,38 @@ describe('Get request to url path http://localhost:8000/stars/hash:[hash]', () =
       .expect('Content-Type', /json/);
   });
 
+  test('It should respond an error if hash param is not a valid SHA256 hash - string not hexadecimal', () => {
+    return request(app).get("/stars/hash:S42ADCeSGbXjWKaAnYXbMpZ6sbrSAo3DpZ")
+      .expect(400)
+      .expect('Content-Type', /json/)
+      .then(response => {
+        expect(response.body).toEqual({ Error: 'Hash is not a SHA256 hash' });
+      });
+  })
+
+  test('It should respond an error if hash param is not a valid SHA256 hash - not 256 bits', () => {
+    return request(app).get("/stars/hash:12edf5e1d740fc138b573141b454083b70f56280e2fb6b0a91f5ac8440211f2")
+      .expect(400)
+      .expect('Content-Type', /json/)
+      .then(response => {
+        expect(response.body).toEqual({ Error: 'Hash is not a SHA256 hash' });
+      });
+  })
+
   test('It should return the correct block', () => {
     let expectedBlock = JSON.parse(JSON.stringify(goodBlock2))
     expectedBlock.body.star['storyDecoded'] = "Found star using https://www.google.com/sky/"
 
     return request(app).get("/stars/hash:12edf5e1d740fc138b573141b454083b70f56280e2fb6b0a91f5ac8440211f26")
+      .expect(200, expectedBlock)
+      .expect('Content-Type', /json/);
+  });
+
+  test('It should return the correct block even if uppercases are used in the hash', () => {
+    let expectedBlock = JSON.parse(JSON.stringify(goodBlock2))
+    expectedBlock.body.star['storyDecoded'] = "Found star using https://www.google.com/sky/"
+
+    return request(app).get("/stars/hash:12EDF5e1d740fc138b573141b454083b70f56280e2fb6b0a91f5ac8440211f26")
       .expect(200, expectedBlock)
       .expect('Content-Type', /json/);
   });
@@ -146,7 +173,16 @@ describe('Get request to url path http://localhost:8000/stars/address:[address]'
       .expect('Content-Type', /json/);
   });
 
-  test('It should return the correct block', () => {
+  test('It should respond an error if address param is not a valid wallet address', () => {
+    return request(app).get("/stars/address:S42ADCeSGbXjWKaAnYXbMpZ6sbrSAo3DpZ")
+      .expect(400)
+      .expect('Content-Type', /json/)
+      .then(response => {
+        expect(response.body).toEqual({ Error: 'The address does not appear to be a valid wallet address.' });
+      });
+  })
+
+  test('It should return the correct blocks', () => {
     let expectedBlock1 = JSON.parse(JSON.stringify(goodBlock1))
     expectedBlock1.body.star['storyDecoded'] = "Found star using https://www.google.com/sky/"
 

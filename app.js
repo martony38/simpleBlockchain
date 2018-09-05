@@ -12,7 +12,7 @@ const app = express();
 const bodyParser = require('body-parser');
 app.use(bodyParser.json());
 
-const checkContentType = function (req, res, next) {
+const checkContentType = (req, res, next) => {
   // Check that POST requests use json
   if (req.get('Content-Type') !== 'application/json') {
     res.status(415).send({ Error: 'Unsupported media-type' });
@@ -21,7 +21,7 @@ const checkContentType = function (req, res, next) {
   }
 };
 
-const hasAddressField = function(req, res, next) {
+const hasAddressField = (req, res, next) => {
   // Check the request body contains an 'address' field/property
   if (!req.body.address) {
     res.status(400).send({ Error: 'Payload should be an object with an address property.' });
@@ -30,9 +30,9 @@ const hasAddressField = function(req, res, next) {
   }
 };
 
-const addressIsValid = function(req, res, next) {
+const addressIsValid = (req, res, next) => {
   // Check wallet address
-  if (!/^[13][a-zA-Z0-9][^OIl]{26,33}/.test(req.body.address)) {
+  if (!/^[13][a-zA-Z0-9][^OIl]{26,33}/.test(req.method === 'POST' ? req.body.address : req.params.address)) {
     return res.status(400).send({ Error: 'The address does not appear to be a valid wallet address.' });
   } else {
     next();
@@ -55,17 +55,17 @@ app.get('/block/:height', (req, res, next) => {
   }
 }, (req, res) => {
   blockChain.getBlock(req.params.height)
-  .then(block => {
-    if (block) {
+    .then(block => {
+      if (block) {
         block.body.star.storyDecoded = Buffer.from(block.body.star.story, 'hex').toString('ascii');
-      res.json(block);
-    } else {
-      res.status(404).json({ Error: 'Block not found' });
-    }
-  });
+        res.json(block);
+      } else {
+        res.status(404).json({ Error: 'Block not found' });
+      }
+    });
 });
 
-app.get('/stars/address::address', (req, res) => {
+app.get('/stars/address::address', addressIsValid, (req, res) => {
   blockChain.getBlockByAddress(req.params.address)
     .then(blocks => {
       if (blocks && blocks.length > 0) {
@@ -80,7 +80,17 @@ app.get('/stars/address::address', (req, res) => {
     })
 })
 
-app.get('/stars/hash::hash', (req, res) => {
+app.get('/stars/hash::hash', (req, res, next) => {
+  // Check that a SHA256 hash is included in the url
+  if (!/^[a-fA-F0-9]{64}$/.test(req.params.hash)) {
+    res.status(400).send({ Error: 'Hash is not a SHA256 hash' });
+  } else {
+    // Convert hash param to lowercase
+    req.params.hash = Buffer.from(req.params.hash, 'hex').toString('hex')
+
+    next();
+  }
+},(req, res) => {
   blockChain.getBlockByHash(req.params.hash)
     .then(block => {
       if (block) {
