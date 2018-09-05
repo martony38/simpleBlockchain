@@ -52,7 +52,7 @@ app.get('/block/:height', (req, res, next) => {
   blockChain.getBlock(req.params.height)
   .then(block => {
     if (block) {
-      block.body.star.storyDecoded = Buffer.from(block.body.star.story, 'hex').toString('ascii')
+        block.body.star.storyDecoded = Buffer.from(block.body.star.story, 'hex').toString('ascii');
       res.json(block);
     } else {
       res.status(404).json({ Error: 'Block not found' });
@@ -65,12 +65,12 @@ app.get('/stars/address::address', (req, res) => {
     .then(blocks => {
       if (blocks && blocks.length > 0) {
         res.json(blocks.map(block => {
-            block.body.star.storyDecoded = Buffer.from(block.body.star.story, 'hex').toString('ascii')
-            return block
+            block.body.star.storyDecoded = Buffer.from(block.body.star.story, 'hex').toString('ascii');
+            return block;
           })
         );
       } else {
-        res.status(404).json({ Error: 'No block found' })
+        res.status(404).json({ Error: 'No block found' });
       }
     })
 })
@@ -120,8 +120,9 @@ app.post('/block', (req, res, next) => {
   }
 }, (req, res, next) => {
   // Convert star story to HEX
-  const hexStory = Buffer.from(req.body.star.story, 'ascii').toString('hex')
-  req.body.star.story = hexStory
+  const hexStory = Buffer.from(req.body.star.story, 'ascii').toString('hex');
+  req.body.star.story = hexStory;
+
   // Check story size
   if (Buffer.byteLength(hexStory, 'hex') > 500) {
     res.status(400).send({ Error: 'star.story exceeds 500 bytes.' });
