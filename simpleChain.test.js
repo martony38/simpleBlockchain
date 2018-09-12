@@ -82,7 +82,14 @@ const badBlock5 = {
    '989fe869ab307e8b4873a740baf93c9aa8d44c34cedbfdfb5dfce10440e6ee69'
 }
 
+beforeAll(() => {
+  if (db.isClosed()) {
+    return db.open();
+  }
+})
+
 afterAll(() => {
+  // Close levelDB instance
   return db.close();
 })
 

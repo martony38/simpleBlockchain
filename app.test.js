@@ -1,6 +1,7 @@
 const request = require('supertest');
 const app = require('./app');
 const db = require('./database');
+const mempoolDB = require('./mempoolDB');
 
 const goodBlock0 = {
   hash: '36f25e45750f39a7e3a760ceee00bf98fe7366fe8df5d0c648ef63ab2375c596',
@@ -75,7 +76,7 @@ const goodBlock4 = {
 
 const badPayLoad = { badPayload: 'a bad payload' }
 
-beforeAll(() => {
+function initBlockchain() {
   // Initialize test blockchain
   return db.batch()
     .put(0, JSON.stringify(goodBlock0))
@@ -84,6 +85,17 @@ beforeAll(() => {
     .put(3, JSON.stringify(goodBlock3))
     .put(4, JSON.stringify(goodBlock4))
     .write();
+}
+
+beforeAll(() => {
+  if (db.isClosed()) {
+    return db.open()
+      then(() => {
+        return initBlockchain();
+      });
+  } else {
+    return initBlockchain();
+  }
 })
 
 afterAll(() => {
@@ -96,7 +108,13 @@ afterAll(() => {
     .del(4)
     .del(5)
     .write()
-    .then(() => db.close());
+    // Close levelDB instances
+    .then(() => {
+      return db.close();
+    })
+    .then(() => {
+      return mempoolDB.close();
+    });
 })
 
 describe('GET request with url path http://localhost:8000/block/{BLOCK_HEIGHT}', () => {
@@ -338,7 +356,11 @@ describe('POST request with url path http://localhost:8000/block with body paylo
 
 describe('Blockchain ID validation routine', () => {
   describe('POST request to http://localhost:8000/requestValidation', () => {
-    const goodPayload = { "address" : "142BDCeSGbXjWKaAnYXbMpZ6sbrSAo3DpZ" };
+    const goodPayload = { "address" : "142BDCfSGbXjWKaAnYXbMpZ6sbrSAo3DpZ" };
+
+    afterAll(() => {
+      return mempoolDB.del('142BDCfSGbXjWKaAnYXbMpZ6sbrSAo3DpZ');
+    })
 
     test('It should respond 415 to requests made with non supported media-types (other than application/json)', () => {
       return request(app).post("/requestValidation").set('Content-Type', 'application/x-www-form-urlencoded').send(goodPayload)
@@ -361,7 +383,9 @@ describe('Blockchain ID validation routine', () => {
         });
     })
 
-    test('Response should contain message details, request timestamp, and time remaining for validation window.', () => {
+    test('Response should contain the message to sign, request timestamp, and time remaining for validation window of 5 min. When re-submitting within validation window, validation window should reduce until it expires.', () => {
+      let validationWindow;
+
       return request(app).post("/requestValidation").send(goodPayload)
         .expect(200)
         .expect('Content-Type', /json/)
@@ -370,40 +394,44 @@ describe('Blockchain ID validation routine', () => {
           expect(response.body).toHaveProperty('message');
           expect(response.body).toHaveProperty('requestTimeStamp');
           expect(response.body).toHaveProperty('validationWindow');
+          expect(response.body.message).toMatch(/142BDCfSGbXjWKaAnYXbMpZ6sbrSAo3DpZ:[0-9]{10}:starRegistry/);
+          expect(response.body.validationWindow).toBeCloseTo(300);
+          validationWindow = response.body.validationWindow
+        })
+        .then(() => {
+          return request(app).post("/requestValidation").send(goodPayload);
+        })
+        .then(response => {
+          expect(response.body.validationWindow).toBeLessThan(validationWindow);
         });
     });
 
-    test('User obtains a response in JSON format with a message to sign. Message format = [walletAddress]:[timeStamp]:starRegistry', () => {
+    test.skip('User obtains a response in JSON format with a message to sign. Message format = [walletAddress]:[timeStamp]:starRegistry', () => {
       return request(app).post("/requestValidation").send(goodPayload)
         .then(response => {
           expect(response.body.message).toMatch(/142BDCeSGbXjWKaAnYXbMpZ6sbrSAo3DpZ:[0-9]{10}:starRegistry/);
         });
     })
 
-    test('The request must be configured with a limited validation window of five minutes.', () => {
+    test.skip('The request must be configured with a limited validation window of five minutes.', () => {
       return request(app).post("/requestValidation").send(goodPayload)
         .then(response => {
-          expect(response.body.validationWindow).toBeLessThanOrEqual(300);
+          expect(response.body.validationWindow).toBeCloseTo(300);
         });
     })
 
-    test('When re-submitting within validation window, validation window should reduce until it expires.', () => {
+    test.skip('When re-submitting within validation window, validation window should reduce until it expires.', () => {
+      let validationWindow
+
       return request(app).post("/requestValidation").send(goodPayload)
         .then(response => {
-          expect(response.body.validationWindow).toBeLessThanOrEqual(300);
-        })
-        .then(() => {
-          return new Promise((res, rej) => {
-            setTimeout(function() {
-              res();
-            }, 3000);
-          })
+          validationWindow = response.body.validationWindow
         })
         .then(() => {
           return request(app).post("/requestValidation").send(goodPayload)
         })
         .then(response => {
-          expect(response.body.validationWindow).toBeLessThanOrEqual(297);
+          expect(response.body.validationWindow).toBeLessThan(validationWindow);
         });
     })
   });
@@ -458,6 +486,10 @@ describe('Blockchain ID validation routine', () => {
           .then(response => {
             signature =  bitcoinMessage.sign(response.body.message, privateKey, keyPair.compressed)
           })
+      })
+
+      afterAll(() => {
+        return mempoolDB.del(address);
       })
 
       test('It should respond 415 to requests made with non supported media-types (other than application/json)', () => {
