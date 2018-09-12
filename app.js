@@ -154,6 +154,9 @@ app.post('/block', (req, res, next) => {
     if (request === null || request.messageSignature !== 'valid') {
       res.status(401).json({ Error: 'Message signature invalid or missing or expired' });
     } else {
+      // Remove star registration request from mempool to prevent user from registering more than 1 star
+      mempool.deleteStarRegistrationRequest(request.address);
+
       blockChain.addBlock(new simpleChain.block(req.body))
         .then(block => {
           if (block) {

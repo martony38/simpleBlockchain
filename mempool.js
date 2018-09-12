@@ -1,8 +1,4 @@
-/**
-* Persist data with LevelDB: https://github.com/Level/level
-*/
-const level = require('level');
-const db = level('./mempool');
+const db = require('./mempoolDB');
 
 /**
 * Use bitcoinjs-message to verify messages: https://github.com/bitcoinjs/bitcoinjs-message
@@ -32,6 +28,10 @@ class StarRegistrationRequest {
 * @description Represents the Mempool that holds the pending star registration requests
 */
 class Mempool {
+  constructor() {
+    this.timeouts = {};
+  }
+
   /**
   * Initialize mempool.
   */
@@ -66,6 +66,17 @@ class Mempool {
     }).then(oldRequests => {
       return db.batch(oldRequests.map(key => ({ type: 'del', key })))
     })
+  }
+
+  /**
+  * Remove a star registration request from mempool database.
+  * @param {string} address - The wallet address.
+  */
+  deleteStarRegistrationRequest(address) {
+    return db.del(address)
+      .then(() => {
+        clearTimeout(this.timeouts[address]);
+      })
   }
 
   /**
@@ -133,9 +144,14 @@ class Mempool {
 
     return db.put(request.address, JSON.stringify(request))
       .then(() => {
-        setTimeout(function() {
+        const timeoutID = setTimeout(function() {
           db.del(request.address);
         }, request.validationWindow * 1000);
+
+        // If there is no other activity, allow program to exit before the Timeout object's callback is invoked
+        timeoutID.unref();
+
+        this.timeouts[request.address] = timeoutID;
         return request
       });
   }
