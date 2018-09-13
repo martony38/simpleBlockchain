@@ -12,6 +12,17 @@ const app = express();
 const bodyParser = require('body-parser');
 app.use(bodyParser.json());
 
+function formatResponse(request) {
+  // Format returned request to meet specs
+  const result = JSON.parse(JSON.stringify(request));
+  result.requestTimeStamp = request.requestTimeStamp.toString().slice(0, -3);
+  result.validationWindow = Math.round(request.validationWindow);
+  if (request.messageSignature === null) {
+    delete result.messageSignature;
+  }
+  return result;
+}
+
 const checkContentType = (req, res, next) => {
   // Check that POST requests use json
   if (req.get('Content-Type') !== 'application/json') {
@@ -179,7 +190,7 @@ app.post('/block', (req, res, next) => {
 app.post('/requestValidation', (req, res) => {
   mempool.addStarRegistrationRequest(req.body.address)
     .then(request => {
-      res.json(request);
+      res.json(formatResponse(request));
     })
 });
 
@@ -197,7 +208,7 @@ app.post('/message-signature/validate', (req, res, next) => {
       if (request.messageSignature !== 'valid') {
         res.status(401).json({ Error: 'Message signature invalid' });
       } else {
-        res.json({ registerStar: true, status: request });
+        res.json({ registerStar: true, status: formatResponse(request) });
       }
     } else {
       res.status(404).json({ Error: 'Star registration request not found or expired' });
