@@ -1,9 +1,11 @@
 
 const simpleChain = require('./simpleChain');
 const blockChain = new simpleChain.blockchain();
+blockChain.init();
 
 const mempoolDB = require('./mempool');
 const mempool = new mempoolDB();
+mempool.init();
 
 const express = require('express');
 const app = express();
