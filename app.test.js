@@ -244,14 +244,26 @@ describe('POST request with url path http://localhost:8000/block with body paylo
   })
 
   test('It should respond 400 if wrong star payload', () => {
-    let wrongStarPayLoad = JSON.parse(JSON.stringify(goodPayload))
-    wrongStarPayLoad.star['badProperty'] = 'test'
+    let wrongStarPayLoad = JSON.parse(JSON.stringify(goodPayload));
+    wrongStarPayLoad.star['badProperty'] = 'test';
 
     return request(app).post("/block").send(wrongStarPayLoad)
       .expect(400)
       .expect('Content-Type', /json/)
       .then(response => {
-        expect(response.body).toEqual({ Error: 'Star object in payload can only contains the following properties: ra, dec, story, mag, const.' });
+        expect(response.body).toEqual({ Error: 'Star object in payload can only contain the following properties: ra, dec, story, mag, const.' });
+      });
+  })
+
+  test('It should respond 400 if ra, dec or story missing from star payload', () => {
+    let wrongStarPayLoad = JSON.parse(JSON.stringify(goodPayload));
+    delete wrongStarPayLoad.star.dec;
+
+    return request(app).post("/block").send(wrongStarPayLoad)
+      .expect(400)
+      .expect('Content-Type', /json/)
+      .then(response => {
+        expect(response.body).toEqual({ Error: 'Star object in payload must contain the following properties: ra, dec, story.' });
       });
   })
 

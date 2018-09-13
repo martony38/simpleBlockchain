@@ -113,6 +113,7 @@ app.post('/block', (req, res, next) => {
   // Check the star object in the request body only contain the allowed fields/properties
   const starProperties = new Set(['ra', 'dec', 'story', 'mag', 'const']);
   let badProperty = false
+  let missingProperty = false
 
   Object.keys(req.body.star).forEach(key => {
     if (!starProperties.has(key)) {
@@ -120,8 +121,14 @@ app.post('/block', (req, res, next) => {
     }
   })
 
+  if (!req.body.star.hasOwnProperty('ra') || !req.body.star.hasOwnProperty('dec') || !req.body.star.hasOwnProperty('story')) {
+    missingProperty = true
+  }
+
   if (badProperty) {
-    res.status(400).send({ Error: 'Star object in payload can only contains the following properties: ra, dec, story, mag, const.' });
+    res.status(400).send({ Error: 'Star object in payload can only contain the following properties: ra, dec, story, mag, const.' });
+  } else if (missingProperty) {
+    res.status(400).send({ Error: 'Star object in payload must contain the following properties: ra, dec, story.' });
   } else {
     next();
   }

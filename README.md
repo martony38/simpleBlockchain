@@ -382,7 +382,10 @@ The RESTFul web API provides methods for fetching blocks with information about 
     { "Error" : "Payload should be an object with a star property." }
     ```
     ```json
-    { "Error" : "Star object in payload can only contains the following properties: ra, dec, story, mag, const." }
+    { "Error" : "Star object in payload can only contain the following properties: ra, dec, story, mag, const." }
+    ```
+    ```json
+    { "Error" : "Star object in payload must contain the following properties: ra, dec, story." }
     ```
     ```json
     { "Error" : "star.story should only include ascii characters." }
