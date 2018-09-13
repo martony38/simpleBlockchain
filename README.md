@@ -24,7 +24,7 @@ Clone or download the repository on your computer.
 
 * install all project dependencies with `npm install` or `yarn install`
 * run the tests with `npm test` or `yarn test`
-* start the server with `node start` or `yarn start`
+* start the server with `node index.js` or `npm run start` or `yarn start`
 
 ## API Endpoints
 The RESTFul web API provides methods for fetching blocks with information about the registered stars and registering new stars by adding blocks to the blockchain.
