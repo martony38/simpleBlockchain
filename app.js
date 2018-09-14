@@ -70,7 +70,11 @@ app.get('/block/:height', (req, res, next) => {
   blockChain.getBlock(req.params.height)
     .then(block => {
       if (block) {
-        block.body.star.storyDecoded = Buffer.from(block.body.star.story, 'hex').toString('ascii');
+        // Genesis block do not contain any star property
+        if (block.body.hasOwnProperty('star')) {
+          block.body.star.storyDecoded = Buffer.from(block.body.star.story, 'hex').toString('ascii');
+        }
+
         res.json(block);
       } else {
         res.status(404).json({ Error: 'Block not found' });
